@@ -584,6 +584,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                             title="વિદ્યાર્થીનો ૩D ફોટો અને પ્રોફાઇલ જુઓ (View Photo)"
                           >
                             <StudentAvatar
+                              studentId={student.id}
                               photoUrl={student.photoUrl}
                               nameGu={student.nameGu}
                               gender={student.gender}
@@ -607,8 +608,13 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                             className="text-left cursor-pointer group"
                             title="પ્રોફાઇલ જુઓ"
                           >
-                            <div className="font-bold text-slate-900 text-sm group-hover:text-amber-700 transition-colors">
-                              {student.nameGu}
+                            <div className="font-bold text-slate-900 text-sm group-hover:text-amber-700 transition-colors flex items-center gap-1">
+                              <span>{student.nameGu}</span>
+                              {StorageService.isStudentLocked(student.id) && (
+                                <span title="પ્રોફાઇલ લૉક છે: ફેરફાર માત્ર 'સુધારો' (Edit) બટનથી જ થશે" className="inline-flex items-center">
+                                  <Lock className="w-3 h-3 text-amber-600 inline shrink-0" />
+                                </span>
+                              )}
                             </div>
                             <div className="text-[11px] text-slate-400">
                               {student.nameEn}
@@ -983,6 +989,7 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                   title="૩D ફોટો ફ્રેમ જુઓ (View 3D Frame)"
                 >
                   <StudentAvatar
+                    studentId={st.id}
                     photoUrl={st.photoUrl}
                     nameGu={st.nameGu}
                     gender={st.gender}
@@ -1033,6 +1040,12 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     ) : (
                       <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
                         અવતાર
+                      </span>
+                    )}
+                    {StorageService.isStudentLocked(st.id) && (
+                      <span className="text-[10px] font-bold text-amber-900 bg-amber-50 border border-amber-300 px-1.5 py-0.5 rounded flex items-center gap-0.5" title="એક વાર ફેરફાર કર્યા પછી માત્ર 'સુધારો' બટનથી જ બદલી શકાશે">
+                        <Lock className="w-2.5 h-2.5 text-amber-700" />
+                        <span>લૉક</span>
                       </span>
                     )}
                   </div>

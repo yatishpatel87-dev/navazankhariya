@@ -29,9 +29,15 @@ export default function App() {
     setSchoolInfo(StorageService.getSchoolInfo());
     setSettings(StorageService.getSettings());
 
-    // Hydrate & permanently lock all uploaded photos from IndexedDB
+    // Hydrate & permanently lock all uploaded photos from IndexedDB safely
     StorageService.syncPhotosWithStorage().then((hydrated) => {
-      setStudents(hydrated);
+      setStudents((current) => {
+        if (!current || current.length === 0) return hydrated;
+        const map = new Map<string, Student>();
+        hydrated.forEach((s) => map.set(s.id, s));
+        current.forEach((s) => map.set(s.id, s));
+        return Array.from(map.values()).sort((a, b) => a.rollNo - b.rollNo);
+      });
     });
 
     // Update today's date if day changes
@@ -127,6 +133,7 @@ export default function App() {
       ...newStudentData,
       id: `std_${Date.now()}`,
     };
+    StorageService.markStudentLocked(newStudent.id);
     setStudents((prev) => {
       const updated = [...prev, newStudent];
       StorageService.saveStudents(updated);
@@ -136,6 +143,7 @@ export default function App() {
 
   const handleEditStudent = useCallback(
     (id: string, updatedData: Omit<Student, 'id'>) => {
+      StorageService.markStudentLocked(id);
       setStudents((prev) => {
         const updated = prev.map((s) =>
           s.id === id ? { ...updatedData, id } : s
@@ -167,11 +175,15 @@ export default function App() {
     [settings]
   );
 
-  // Reset to seed data (retaining permanent student photos)
+  // Reset to seed data (retaining permanent locked student profiles & photos)
   const handleResetSeedData = useCallback(async () => {
+    const lockedStudents = StorageService.getStudents().filter((s) => StorageService.isStudentLocked(s.id));
     localStorage.clear();
     const studentsWithPhotos = await StorageService.syncPhotosWithStorage();
-    setStudents(studentsWithPhotos);
+    // Re-lock all customized students
+    lockedStudents.forEach((s) => StorageService.markStudentLocked(s.id));
+    const merged = StorageService.getStudents();
+    setStudents(merged);
     setAttendanceRecords(StorageService.getAttendanceRecords());
     setSchoolInfo(StorageService.getSchoolInfo());
     setSettings(StorageService.getSettings());

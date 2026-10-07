@@ -27,34 +27,45 @@ export class StorageService {
 
     try {
       const data = localStorage.getItem(STORAGE_KEYS.STUDENTS);
-      let list: Student[] = [];
+      let baseList: Student[] = [];
 
-      if (permanentProfiles.length > 0) {
-        list = permanentProfiles;
-      } else if (data) {
+      if (data) {
         const parsed = JSON.parse(data);
-        list = Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_STUDENTS;
+        baseList = Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_STUDENTS;
       } else {
-        list = SEED_STUDENTS;
+        baseList = SEED_STUDENTS;
       }
 
-      // Merge permanent profiles by ID so that no added/edited child profile is ever lost or reverted
+      // Always start with all base students (never drop any student)
       const profileMap = new Map<string, Student>();
-      list.forEach((s) => profileMap.set(s.id, s));
-      permanentProfiles.forEach((s) => profileMap.set(s.id, s));
+      baseList.forEach((s) => profileMap.set(s.id, s));
 
-      const mergedList = Array.from(profileMap.values());
+      // Overlay any customized/locked permanent profiles so they NEVER get lost or overwritten
+      permanentProfiles.forEach((s) => {
+        const existing = profileMap.get(s.id);
+        if (existing) {
+          profileMap.set(s.id, { ...existing, ...s });
+        } else {
+          profileMap.set(s.id, s);
+        }
+      });
+
+      const mergedList = Array.from(profileMap.values()).sort((a, b) => a.rollNo - b.rollNo);
 
       return mergedList.map((st) => ({
         ...st,
         photoUrl: permanentPhotos[st.id] || st.photoUrl,
       }));
     } catch {
-      if (permanentProfiles.length > 0) return permanentProfiles;
-      return SEED_STUDENTS.map((st) => ({
-        ...st,
-        photoUrl: permanentPhotos[st.id] || st.photoUrl,
-      }));
+      const profileMap = new Map<string, Student>();
+      SEED_STUDENTS.forEach((s) => profileMap.set(s.id, s));
+      permanentProfiles.forEach((s) => profileMap.set(s.id, s));
+      return Array.from(profileMap.values())
+        .sort((a, b) => a.rollNo - b.rollNo)
+        .map((st) => ({
+          ...st,
+          photoUrl: permanentPhotos[st.id] || st.photoUrl,
+        }));
     }
   }
 
@@ -84,6 +95,14 @@ export class StorageService {
     return PermanentStudentStorage.getStudentProfileSync(studentId);
   }
 
+  static isStudentLocked(studentId: string): boolean {
+    return PermanentStudentStorage.isStudentLocked(studentId);
+  }
+
+  static markStudentLocked(studentId: string): void {
+    PermanentStudentStorage.markStudentLocked(studentId);
+  }
+
   static async syncPhotosWithStorage(): Promise<Student[]> {
     // Hydrate both student profiles and photos from permanent IndexedDB
     const indexedDbProfiles = await PermanentStudentStorage.getAllStudentProfilesFromIndexedDB();
@@ -110,7 +129,7 @@ export class StorageService {
         return initialRecords;
       }
       const parsed: AttendanceRecord[] = JSON.parse(data);
-      if (!Array.isArray(parsed) || parsed.length < 50) {
+      if (!Array.isArray(parsed) || parsed.length === 0) {
         const students = this.getStudents();
         const initialRecords = generateMonthSeedAttendance(students);
         this.saveAttendanceRecords(initialRecords);

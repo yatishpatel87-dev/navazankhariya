@@ -797,6 +797,7 @@ export const StudentAttendanceSection: React.FC<StudentAttendanceSectionProps> =
                       }`}
                     >
                       <StudentAvatar
+                        studentId={student.id}
                         photoUrl={student.photoUrl}
                         nameGu={student.nameGu}
                         gender={student.gender}

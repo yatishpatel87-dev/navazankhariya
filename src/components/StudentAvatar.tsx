@@ -1,6 +1,8 @@
 import React, { useState, useEffect } from 'react';
+import { PhotoStorage } from '../services/photoStorage';
 
 interface StudentAvatarProps {
+  studentId?: string;
   photoUrl?: string;
   nameGu: string;
   gender: 'male' | 'female';
@@ -11,6 +13,7 @@ interface StudentAvatarProps {
 }
 
 export const StudentAvatar: React.FC<StudentAvatarProps> = ({
+  studentId,
   photoUrl,
   nameGu,
   gender,
@@ -21,10 +24,13 @@ export const StudentAvatar: React.FC<StudentAvatarProps> = ({
 }) => {
   const [imageError, setImageError] = useState(false);
 
-  // Reset image error if photoUrl updates
+  // Retrieve effective photo: from prop or directly from permanent storage by studentId
+  const effectivePhoto = photoUrl || (studentId ? PhotoStorage.getPhotoSync(studentId) : undefined);
+
+  // Reset image error if effectivePhoto updates
   useEffect(() => {
     setImageError(false);
-  }, [photoUrl]);
+  }, [effectivePhoto]);
 
   const sizeClasses = {
     xs: 'w-7 h-7 text-xs rounded-full',
@@ -36,7 +42,7 @@ export const StudentAvatar: React.FC<StudentAvatarProps> = ({
   };
 
   // If user uploaded a valid photo
-  if (photoUrl && !imageError) {
+  if (effectivePhoto && !imageError) {
     return (
       <div
         className={`relative overflow-hidden shrink-0 shadow-sm border border-slate-200/80 bg-slate-100 flex items-center justify-center ${
@@ -44,10 +50,17 @@ export const StudentAvatar: React.FC<StudentAvatarProps> = ({
         } ${sizeClasses[size]} ${className}`}
       >
         <img
-          src={photoUrl}
+          src={effectivePhoto}
           alt={nameGu}
+          loading="eager"
+          decoding="async"
           referrerPolicy="no-referrer"
-          onError={() => setImageError(true)}
+          onError={() => {
+            // Only set error if not a data URI
+            if (!effectivePhoto.startsWith('data:')) {
+              setImageError(true);
+            }
+          }}
           className="w-full h-full object-cover"
         />
       </div>
@@ -65,86 +78,50 @@ export const StudentAvatar: React.FC<StudentAvatarProps> = ({
     >
       <svg
         viewBox="0 0 100 100"
-        className="w-full h-full p-1.5"
+        className="w-4/5 h-4/5 drop-shadow-sm select-none pointer-events-none"
         fill="none"
         xmlns="http://www.w3.org/2000/svg"
       >
-        {/* Soft background glow */}
-        <circle cx="50" cy="50" r="46" fill="white" fillOpacity="0.45" />
-
-        {/* School Uniform Collar */}
-        <path
-          d="M26 88 C26 74, 38 68, 50 68 C62 68, 74 74, 74 88 L74 96 L26 96 Z"
-          fill={isGirl ? '#0284c7' : '#0369a1'} // School blue uniform
-        />
-        {/* White shirt collar triangles */}
-        <polygon points="50,74 38,68 45,82" fill="#ffffff" />
-        <polygon points="50,74 62,68 55,82" fill="#ffffff" />
-        {/* School tie or badge */}
-        <polygon points="48,74 52,74 51,84 49,84" fill="#e11d48" />
-
-        {/* Neck */}
-        <rect x="44" y="58" width="12" height="14" rx="4" fill="#fbcfe8" />
-
-        {/* Hair - Back (for girls with pigtails) */}
-        {isGirl && (
-          <>
-            {/* Left ponytail/ribbon */}
-            <circle cx="22" cy="46" r="10" fill="#1e293b" />
-            <circle cx="26" cy="44" r="4" fill="#ef4444" /> {/* red hair ribbon */}
-            {/* Right ponytail/ribbon */}
-            <circle cx="78" cy="46" r="10" fill="#1e293b" />
-            <circle cx="74" cy="44" r="4" fill="#ef4444" />
-          </>
-        )}
-
-        {/* Face */}
-        <ellipse cx="50" cy="46" rx="20" ry="21" fill="#fed7aa" />
-
-        {/* Cheeks */}
-        <ellipse cx="37" cy="50" rx="3.5" ry="2.5" fill="#fca5a5" opacity="0.6" />
-        <ellipse cx="63" cy="50" rx="3.5" ry="2.5" fill="#fca5a5" opacity="0.6" />
-
-        {/* Eyes */}
-        <ellipse cx="42" cy="44" rx="2.5" ry="3.2" fill="#1e293b" />
-        <circle cx="43" cy="43" r="1" fill="#ffffff" />
-        <ellipse cx="58" cy="44" rx="2.5" ry="3.2" fill="#1e293b" />
-        <circle cx="59" cy="43" r="1" fill="#ffffff" />
-
-        {/* Eyebrows */}
-        <path d="M38 39 Q42 37 46 39" stroke="#1e293b" strokeWidth="1.6" strokeLinecap="round" />
-        <path d="M54 39 Q58 37 62 39" stroke="#1e293b" strokeWidth="1.6" strokeLinecap="round" />
-
-        {/* Nose */}
-        <circle cx="50" cy="48" r="1.3" fill="#fb923c" />
-
-        {/* Big Happy Smile */}
-        <path
-          d="M43 53 Q50 61 57 53"
-          stroke="#991b1b"
-          strokeWidth="2.2"
-          strokeLinecap="round"
-          fill="none"
-        />
-
-        {/* Hair - Front */}
         {isGirl ? (
-          <path
-            d="M30 40 C30 26, 42 22, 50 22 C58 22, 70 26, 70 40 C68 34, 60 30, 50 30 C40 30, 32 34, 30 40 Z"
-            fill="#1e293b"
-          />
+          // Indian Schoolgirl with earrings & two neat braided plaits / ribbons
+          <g>
+            <circle cx="50" cy="98" r="38" fill="#e11d48" />
+            <path d="M42 60 L50 75 L58 60 Z" fill="#ffffff" />
+            <rect x="44" y="52" width="12" height="15" fill="#fbcfe8" rx="2" />
+            <ellipse cx="50" cy="40" rx="22" ry="24" fill="#fbcfe8" />
+            <path d="M28 35 C28 20 72 20 72 35 C72 28 65 20 50 20 C35 20 28 28 28 35 Z" fill="#1e1b4b" />
+            <path d="M30 36 C35 30 45 28 50 34 C55 28 65 30 70 36 C65 31 56 31 50 36 C44 31 35 31 30 36 Z" fill="#1e1b4b" />
+            <circle cx="41" cy="40" r="2.5" fill="#1e1b4b" />
+            <circle cx="59" cy="40" r="2.5" fill="#1e1b4b" />
+            <circle cx="42" cy="39" r="0.8" fill="#ffffff" />
+            <circle cx="60" cy="39" r="0.8" fill="#ffffff" />
+            <path d="M44 48 Q50 54 56 48" stroke="#be123c" strokeWidth="2.2" strokeLinecap="round" />
+            <circle cx="50" cy="36" r="1.5" fill="#dc2626" />
+            <circle cx="27" cy="43" r="2" fill="#fbbf24" />
+            <circle cx="73" cy="43" r="2" fill="#fbbf24" />
+            <path d="M28 42 C20 48 20 65 24 75" stroke="#1e1b4b" strokeWidth="5.5" strokeLinecap="round" />
+            <path d="M72 42 C80 48 80 65 76 75" stroke="#1e1b4b" strokeWidth="5.5" strokeLinecap="round" />
+            <rect x="21" y="70" width="6" height="4" rx="2" fill="#e11d48" />
+            <rect x="73" y="70" width="6" height="4" rx="2" fill="#e11d48" />
+          </g>
         ) : (
-          <path
-            d="M29 42 C28 27, 40 21, 50 21 C60 21, 72 27, 71 42 C66 32, 58 30, 48 30 C38 30, 32 35, 29 42 Z"
-            fill="#1e293b"
-          />
-        )}
-
-        {/* Gujarati Tika / Bindi (traditional touch) */}
-        {isGirl ? (
-          <circle cx="50" cy="40" r="1.5" fill="#dc2626" />
-        ) : (
-          <line x1="49" y1="36" x2="51" y2="36" stroke="#ea580c" strokeWidth="1.5" strokeLinecap="round" />
+          // Indian Schoolboy with school uniform collar and necktie
+          <g>
+            <circle cx="50" cy="98" r="38" fill="#1d4ed8" />
+            <path d="M38 60 L50 78 L62 60 Z" fill="#ffffff" />
+            <path d="M47 62 L53 62 L52 82 L50 86 L48 82 Z" fill="#dc2626" />
+            <rect x="44" y="52" width="12" height="15" fill="#fed7aa" rx="2" />
+            <ellipse cx="50" cy="39" rx="21" ry="23" fill="#fed7aa" />
+            <path d="M29 34 C29 18 71 18 71 34 C71 25 64 16 50 16 C36 16 29 25 29 34 Z" fill="#1e1b4b" />
+            <path d="M30 33 C38 23 46 29 55 24 C62 26 69 31 70 34 C64 27 57 26 51 28 C43 30 37 27 30 33 Z" fill="#1e1b4b" />
+            <circle cx="42" cy="40" r="2.5" fill="#1e1b4b" />
+            <circle cx="58" cy="40" r="2.5" fill="#1e1b4b" />
+            <circle cx="43" cy="39" r="0.8" fill="#ffffff" />
+            <circle cx="59" cy="39" r="0.8" fill="#ffffff" />
+            <path d="M44 49 Q50 55 56 49" stroke="#9a3412" strokeWidth="2.2" strokeLinecap="round" />
+            <ellipse cx="28" cy="40" rx="3" ry="5" fill="#fed7aa" />
+            <ellipse cx="72" cy="40" rx="3" ry="5" fill="#fed7aa" />
+          </g>
         )}
       </svg>
     </div>

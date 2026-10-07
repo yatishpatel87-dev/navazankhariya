@@ -350,6 +350,7 @@ export const MonthlyRegisterPrintView: React.FC<MonthlyRegisterPrintViewProps> =
                         <div className="flex items-center gap-1.5">
                           {showPhotos && (
                             <StudentAvatar
+                              studentId={row.student.id}
                               photoUrl={row.student.photoUrl}
                               nameGu={row.student.nameGu}
                               gender={row.student.gender}

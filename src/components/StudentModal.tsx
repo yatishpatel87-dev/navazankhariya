@@ -167,11 +167,20 @@ export const StudentModal: React.FC<StudentModalProps> = ({
         <h2 className="text-xl font-bold text-slate-900 mb-1">
           {initialData ? 'વિદ્યાર્થીની માહિતી અને ફોટો સુધારો' : 'નવો વિદ્યાર્થી ઉમેરો'}
         </h2>
-        <p className="text-xs text-slate-500 mb-5">
+        <p className="text-xs text-slate-500 mb-3">
           {initialData
             ? 'અહીં ઉમેરેલી કે સુધારેલી તમામ માહિતી (નામ, ફોટો, કેટેગરી, રોલ નં.) કાયમ માટે લૉક રહેશે અને ક્યારેય બદલાશે નહીં.'
             : 'નવા બાળકની ઉમેરેલી તમામ માહિતી અને ફોટો કાયમ માટે હાજરી પત્રકમાં સુરક્ષિત રહેશે.'}
         </p>
+
+        {initialData && (
+          <div className="flex items-center gap-2 px-3.5 py-2 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-300 rounded-2xl text-xs font-bold text-amber-950 mb-4 shadow-2xs">
+            <Lock className="w-4 h-4 text-amber-700 shrink-0" />
+            <span>
+              લૉક કરેલ પ્રોફાઇલ: બાળકની માહિતી માત્ર અહીં 'સુધારો' (Edit) માંથી જ બદલી શકાશે.
+            </span>
+          </div>
+        )}
 
         <form onSubmit={handleSubmit} className="space-y-4">
           {/* Avatar Preview & Photo Upload */}

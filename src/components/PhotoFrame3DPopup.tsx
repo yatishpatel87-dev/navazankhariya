@@ -86,6 +86,7 @@ export const PhotoFrame3DPopup: React.FC<PhotoFrame3DPopupProps> = ({
           {/* Inner metallic bevel */}
           <div className="w-full h-full rounded-2xl bg-white p-1.5 shadow-[inset_0_4px_8px_rgba(0,0,0,0.25)] flex items-center justify-center overflow-hidden relative">
             <StudentAvatar
+              studentId={student.id}
               photoUrl={student.photoUrl}
               nameGu={student.nameGu}
               gender={student.gender}
@@ -244,6 +245,12 @@ export const PhotoFrame3DPopup: React.FC<PhotoFrame3DPopupProps> = ({
               )}
             </div>
           )}
+
+          {/* Security lock notice */}
+          <div className="mt-2.5 py-1.5 px-2.5 bg-slate-50 border border-slate-200/80 rounded-xl flex items-center justify-center gap-1.5 text-[11px] font-semibold text-slate-600">
+            <Lock className="w-3 h-3 text-amber-600 shrink-0" />
+            <span>પ્રોફાઇલ લૉક: ફેરફાર માત્ર શિક્ષક લૉગિન -&gt; 'સુધારો' માંથી જ શક્ય છે</span>
+          </div>
         </div>
       </div>
     </div>

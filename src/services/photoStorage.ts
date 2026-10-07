@@ -12,10 +12,12 @@ const STORE_PHOTOS = 'student_photos';
 const STORE_PROFILES = 'student_profiles';
 const LOCAL_STORAGE_PHOTOS = 'nzps_permanent_photos_v1';
 const LOCAL_STORAGE_PROFILES = 'nzps_permanent_profiles_v2';
+const LOCAL_STORAGE_LOCKED = 'nzps_locked_students_v1';
 
 class PermanentStudentStorageService {
   private photoCache: Record<string, string> = {};
   private profileCache: Record<string, Student> = {};
+  private lockedIds: Set<string> = new Set();
   private dbPromise: Promise<IDBDatabase> | null = null;
   private isHydrated = false;
 
@@ -44,6 +46,14 @@ class PermanentStudentStorageService {
           this.profileCache = { ...this.profileCache, ...parsedProfiles };
         }
       }
+
+      const rawLocked = localStorage.getItem(LOCAL_STORAGE_LOCKED);
+      if (rawLocked) {
+        const parsedLocked = JSON.parse(rawLocked);
+        if (Array.isArray(parsedLocked)) {
+          this.lockedIds = new Set(parsedLocked);
+        }
+      }
     } catch (e) {
       console.warn('Could not read profiles/photos from localStorage cache', e);
     }
@@ -53,6 +63,7 @@ class PermanentStudentStorageService {
     try {
       localStorage.setItem(LOCAL_STORAGE_PHOTOS, JSON.stringify(this.photoCache));
       localStorage.setItem(LOCAL_STORAGE_PROFILES, JSON.stringify(this.profileCache));
+      localStorage.setItem(LOCAL_STORAGE_LOCKED, JSON.stringify(Array.from(this.lockedIds)));
     } catch (e) {
       console.warn('LocalStorage quota limit reached, relying on IndexedDB for permanent storage', e);
     }
@@ -145,6 +156,9 @@ class PermanentStudentStorageService {
   async saveStudentProfile(student: Student): Promise<void> {
     if (!student || !student.id) return;
 
+    // Lock this student so it can only be modified through the explicit Edit flow
+    this.lockedIds.add(student.id);
+
     // Preserve photo
     const finalPhoto = student.photoUrl || this.photoCache[student.id];
     const fullStudent: Student = {
@@ -179,6 +193,24 @@ class PermanentStudentStorageService {
     } catch (e) {
       console.warn('IndexedDB write error for student profile:', e);
     }
+  }
+
+  /**
+   * Check if a student profile has been locked (customized/added by teacher).
+   * Once locked, it can ONLY be changed via the explicit Edit modal.
+   */
+  isStudentLocked(studentId: string): boolean {
+    return this.lockedIds.has(studentId) || (studentId.startsWith('std_') && !studentId.startsWith('std7-'));
+  }
+
+  markStudentLocked(studentId: string): void {
+    this.lockedIds.add(studentId);
+    this.saveToLocalStorage();
+  }
+
+  unmarkStudentLocked(studentId: string): void {
+    this.lockedIds.delete(studentId);
+    this.saveToLocalStorage();
   }
 
   /**
@@ -230,6 +262,7 @@ class PermanentStudentStorageService {
   async deleteStudentProfile(studentId: string): Promise<void> {
     delete this.profileCache[studentId];
     delete this.photoCache[studentId];
+    this.lockedIds.delete(studentId);
     this.saveToLocalStorage();
 
     try {
