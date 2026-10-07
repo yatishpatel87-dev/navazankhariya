@@ -159,7 +159,7 @@ export const StudentAttendanceSection: React.FC<StudentAttendanceSectionProps> =
       } else if (activeFilter === 'roll_1_21') {
         matchFilter = s.rollNo >= 1 && s.rollNo <= 21;
       } else if (activeFilter === 'roll_22_43') {
-        matchFilter = s.rollNo >= 22 && s.rollNo <= 43;
+        matchFilter = s.rollNo >= 22;
       }
 
       // Search query filter
@@ -172,7 +172,7 @@ export const StudentAttendanceSection: React.FC<StudentAttendanceSectionProps> =
         toGujaratiNum(s.rollNo) === q;
 
       return matchFilter && matchSearch;
-    });
+    }).sort((a, b) => a.rollNo - b.rollNo);
   }, [students, activeFilter, searchQuery, attendanceMap]);
 
   // Handle student photo click
@@ -601,7 +601,7 @@ export const StudentAttendanceSection: React.FC<StudentAttendanceSectionProps> =
                 : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
             }`}
           >
-            <span>રોલ ૨૨ થી ૪૩</span>
+            <span>રોલ ૨૨ થી આગળ</span>
           </button>
         </div>
 
@@ -610,7 +610,7 @@ export const StudentAttendanceSection: React.FC<StudentAttendanceSectionProps> =
           <Search className="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2" />
           <input
             type="text"
-            placeholder="નામ અથવા રોલ નં. શોધો (૧ થી ૪૩)..."
+            placeholder="નામ અથવા રોલ નં. શોધો..."
             value={searchQuery}
             onChange={(e) => setSearchQuery(e.target.value)}
             className="w-full pl-9 pr-3 py-2 bg-slate-50 text-xs rounded-xl border border-slate-200 focus:outline-none focus:ring-2 focus:ring-amber-500/20 focus:border-amber-500 text-slate-800 placeholder:text-slate-400 transition-all"

@@ -1,6 +1,7 @@
 import { Student, AttendanceRecord, SchoolInfo, AppSettings } from '../types';
 import { SEED_STUDENTS, DEFAULT_SCHOOL_INFO } from '../data/seedStudents';
 import { generateMonthSeedAttendance } from '../data/seedAttendance';
+import { PhotoStorage, PermanentStudentStorage } from './photoStorage';
 
 const STORAGE_KEYS = {
   STUDENTS: 'nzps_students_std7_v2',
@@ -21,29 +22,82 @@ export const DEFAULT_SETTINGS: AppSettings = {
 
 export class StorageService {
   static getStudents(): Student[] {
+    const permanentProfiles = PermanentStudentStorage.getAllStudentProfilesSync();
+    const permanentPhotos = PhotoStorage.getAllPhotosSync();
+
     try {
       const data = localStorage.getItem(STORAGE_KEYS.STUDENTS);
-      if (!data) {
-        this.saveStudents(SEED_STUDENTS);
-        return SEED_STUDENTS;
+      let list: Student[] = [];
+
+      if (permanentProfiles.length > 0) {
+        list = permanentProfiles;
+      } else if (data) {
+        const parsed = JSON.parse(data);
+        list = Array.isArray(parsed) && parsed.length > 0 ? parsed : SEED_STUDENTS;
+      } else {
+        list = SEED_STUDENTS;
       }
-      const parsed: Student[] = JSON.parse(data);
-      if (!Array.isArray(parsed) || parsed.length === 0) {
-        this.saveStudents(SEED_STUDENTS);
-        return SEED_STUDENTS;
-      }
-      return parsed;
+
+      // Merge permanent profiles by ID so that no added/edited child profile is ever lost or reverted
+      const profileMap = new Map<string, Student>();
+      list.forEach((s) => profileMap.set(s.id, s));
+      permanentProfiles.forEach((s) => profileMap.set(s.id, s));
+
+      const mergedList = Array.from(profileMap.values());
+
+      return mergedList.map((st) => ({
+        ...st,
+        photoUrl: permanentPhotos[st.id] || st.photoUrl,
+      }));
     } catch {
-      return SEED_STUDENTS;
+      if (permanentProfiles.length > 0) return permanentProfiles;
+      return SEED_STUDENTS.map((st) => ({
+        ...st,
+        photoUrl: permanentPhotos[st.id] || st.photoUrl,
+      }));
     }
   }
 
   static saveStudents(students: Student[]): void {
     try {
+      // 1. Permanently persist each student's entire profile & photo into IndexedDB + LocalStorage
+      PermanentStudentStorage.saveAllStudentProfiles(students);
+
+      // 2. Persist students array in localStorage
       localStorage.setItem(STORAGE_KEYS.STUDENTS, JSON.stringify(students));
     } catch (e) {
-      console.error('Failed to save students', e);
+      console.error('Failed to save students to localStorage (IndexedDB has saved all profiles & photos)', e);
     }
+  }
+
+  static deleteStudent(studentId: string): void {
+    PermanentStudentStorage.deleteStudentProfile(studentId);
+    const updated = this.getStudents().filter((s) => s.id !== studentId);
+    this.saveStudents(updated);
+  }
+
+  static getStudentPhoto(studentId: string): string | undefined {
+    return PhotoStorage.getPhotoSync(studentId);
+  }
+
+  static getStudentProfile(studentId: string): Student | undefined {
+    return PermanentStudentStorage.getStudentProfileSync(studentId);
+  }
+
+  static async syncPhotosWithStorage(): Promise<Student[]> {
+    // Hydrate both student profiles and photos from permanent IndexedDB
+    const indexedDbProfiles = await PermanentStudentStorage.getAllStudentProfilesFromIndexedDB();
+    let currentList = this.getStudents();
+
+    if (indexedDbProfiles && indexedDbProfiles.length > 0) {
+      const map = new Map<string, Student>();
+      currentList.forEach((s) => map.set(s.id, s));
+      indexedDbProfiles.forEach((s) => map.set(s.id, s));
+      currentList = Array.from(map.values());
+    }
+
+    this.saveStudents(currentList);
+    return currentList;
   }
 
   static getAttendanceRecords(): AttendanceRecord[] {

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 
 interface StudentAvatarProps {
   photoUrl?: string;
@@ -6,7 +6,7 @@ interface StudentAvatarProps {
   gender: 'male' | 'female';
   avatarIcon?: string;
   avatarBg?: string;
-  size?: 'sm' | 'md' | 'lg' | 'xl' | '2xl';
+  size?: 'xs' | 'sm' | 'md' | 'lg' | 'xl' | '2xl';
   className?: string;
 }
 
@@ -21,7 +21,13 @@ export const StudentAvatar: React.FC<StudentAvatarProps> = ({
 }) => {
   const [imageError, setImageError] = useState(false);
 
+  // Reset image error if photoUrl updates
+  useEffect(() => {
+    setImageError(false);
+  }, [photoUrl]);
+
   const sizeClasses = {
+    xs: 'w-7 h-7 text-xs rounded-full',
     sm: 'w-10 h-10 text-sm',
     md: 'w-14 h-14 text-base',
     lg: 'w-24 h-24 text-2xl',
@@ -33,7 +39,9 @@ export const StudentAvatar: React.FC<StudentAvatarProps> = ({
   if (photoUrl && !imageError) {
     return (
       <div
-        className={`relative rounded-2xl overflow-hidden shrink-0 shadow-sm border border-slate-200/80 bg-slate-100 flex items-center justify-center ${sizeClasses[size]} ${className}`}
+        className={`relative overflow-hidden shrink-0 shadow-sm border border-slate-200/80 bg-slate-100 flex items-center justify-center ${
+          size === 'xs' ? 'rounded-full' : 'rounded-2xl'
+        } ${sizeClasses[size]} ${className}`}
       >
         <img
           src={photoUrl}

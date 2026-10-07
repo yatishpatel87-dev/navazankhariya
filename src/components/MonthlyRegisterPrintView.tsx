@@ -1,6 +1,7 @@
-import React, { useMemo } from 'react';
-import { Printer, Download, X, Calendar, Check, School, ShieldCheck } from 'lucide-react';
+import React, { useState, useMemo } from 'react';
+import { Printer, Download, X, Calendar, Check, School, ShieldCheck, Camera } from 'lucide-react';
 import { Student, AttendanceRecord, SchoolInfo } from '../types';
+import { StudentAvatar } from './StudentAvatar';
 import { toGujaratiNum, getGujaratiMonthName } from '../utils/gujarati';
 import { calculateCategoryGenderBreakdown } from '../utils/studentStats';
 
@@ -19,6 +20,8 @@ export const MonthlyRegisterPrintView: React.FC<MonthlyRegisterPrintViewProps> =
   currentDate,
   onClose,
 }) => {
+  const [showPhotos, setShowPhotos] = useState(true);
+
   // Parse year and month
   const [yearStr, monthStr] = currentDate.split('-');
   const year = parseInt(yearStr, 10) || new Date().getFullYear();
@@ -72,7 +75,8 @@ export const MonthlyRegisterPrintView: React.FC<MonthlyRegisterPrintViewProps> =
 
   // Student rows with day-by-day attendance and totals
   const studentRows = useMemo(() => {
-    return students.map((st) => {
+    const sorted = [...students].sort((a, b) => a.rollNo - b.rollNo);
+    return sorted.map((st) => {
       let presentCount = 0;
       let absentCount = 0;
       let leaveCount = 0;
@@ -202,6 +206,20 @@ export const MonthlyRegisterPrintView: React.FC<MonthlyRegisterPrintViewProps> =
           </div>
 
           <div className="flex items-center gap-2.5">
+            {/* Toggle Student Photos in Register */}
+            <button
+              onClick={() => setShowPhotos(!showPhotos)}
+              className={`px-3 py-2 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 border cursor-pointer ${
+                showPhotos
+                  ? 'bg-amber-50 hover:bg-amber-100 text-amber-900 border-amber-300'
+                  : 'bg-slate-100 hover:bg-slate-200 text-slate-700 border-slate-300'
+              }`}
+              title="પત્રકમાં બાળકના અપલોડ કરેલા ફોટા દર્શાવો અથવા છુપાવો"
+            >
+              <Camera className="w-3.5 h-3.5 text-amber-600" />
+              <span>{showPhotos ? '📸 ફોટા સાથે પત્રક' : '📄 માત્ર લખાણ'}</span>
+            </button>
+
             <button
               onClick={handlePrint}
               className="px-5 py-2.5 bg-gradient-to-r from-amber-500 to-amber-600 hover:from-amber-600 hover:to-amber-700 text-white font-black text-xs rounded-xl shadow-md transition-all flex items-center gap-2 cursor-pointer active:scale-95"
@@ -327,9 +345,29 @@ export const MonthlyRegisterPrintView: React.FC<MonthlyRegisterPrintViewProps> =
                         {row.student.rollNo}
                       </td>
 
-                      {/* Name */}
-                      <td className="border border-slate-700 py-1 px-2 text-left font-bold text-slate-900 truncate max-w-[150px]">
-                        {row.student.nameGu}
+                      {/* Name & Photo */}
+                      <td className="border border-slate-700 py-1 px-1.5 text-left font-bold text-slate-900">
+                        <div className="flex items-center gap-1.5">
+                          {showPhotos && (
+                            <StudentAvatar
+                              photoUrl={row.student.photoUrl}
+                              nameGu={row.student.nameGu}
+                              gender={row.student.gender}
+                              avatarIcon={row.student.avatarIcon}
+                              avatarBg={row.student.avatarBg}
+                              size="xs"
+                              className="w-6 h-6 shrink-0 print:w-5 print:h-5 shadow-2xs border border-slate-300"
+                            />
+                          )}
+                          <div className="truncate max-w-[140px]">
+                            <div className="truncate leading-tight font-bold text-slate-900 text-xs print:text-[10px]">
+                              {row.student.nameGu}
+                            </div>
+                            <div className="text-[9px] text-slate-500 font-medium truncate leading-tight print:hidden">
+                              {row.student.nameEn}
+                            </div>
+                          </div>
+                        </div>
                       </td>
 
                       {/* Gender */}

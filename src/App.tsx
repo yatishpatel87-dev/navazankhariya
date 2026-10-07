@@ -29,6 +29,11 @@ export default function App() {
     setSchoolInfo(StorageService.getSchoolInfo());
     setSettings(StorageService.getSettings());
 
+    // Hydrate & permanently lock all uploaded photos from IndexedDB
+    StorageService.syncPhotosWithStorage().then((hydrated) => {
+      setStudents(hydrated);
+    });
+
     // Update today's date if day changes
     const timer = setInterval(() => {
       setTodayDate(getTodayDateString());
@@ -143,11 +148,8 @@ export default function App() {
   );
 
   const handleDeleteStudent = useCallback((id: string) => {
-    setStudents((prev) => {
-      const updated = prev.filter((s) => s.id !== id);
-      StorageService.saveStudents(updated);
-      return updated;
-    });
+    StorageService.deleteStudent(id);
+    setStudents(StorageService.getStudents());
   }, []);
 
   // School info & settings
@@ -165,10 +167,11 @@ export default function App() {
     [settings]
   );
 
-  // Reset to seed data
-  const handleResetSeedData = useCallback(() => {
+  // Reset to seed data (retaining permanent student photos)
+  const handleResetSeedData = useCallback(async () => {
     localStorage.clear();
-    setStudents(StorageService.getStudents());
+    const studentsWithPhotos = await StorageService.syncPhotosWithStorage();
+    setStudents(studentsWithPhotos);
     setAttendanceRecords(StorageService.getAttendanceRecords());
     setSchoolInfo(StorageService.getSchoolInfo());
     setSettings(StorageService.getSettings());

@@ -115,7 +115,7 @@ export const PhotoFrame3DPopup: React.FC<PhotoFrame3DPopupProps> = ({
               રોલ નં. {toGujaratiNum(student.rollNo)}
             </span>
             <span className="px-3 py-1 bg-amber-500 text-white rounded-xl text-xs font-bold shadow-xs">
-              ધોરણ ૭ (Std 7)
+              ધોરણ {toGujaratiNum(student.standard)} (Std {student.standard})
             </span>
           </div>
 

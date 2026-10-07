@@ -577,18 +577,43 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                           {toGujaratiNum(student.rollNo)}
                         </td>
                         <td className="py-3 px-4">
-                          <StudentAvatar
-                            photoUrl={student.photoUrl}
-                            nameGu={student.nameGu}
-                            gender={student.gender}
-                            avatarIcon={student.avatarIcon}
-                            avatarBg={student.avatarBg}
-                            size="sm"
-                          />
+                          <button
+                            type="button"
+                            onClick={() => setSelected3DStudent(student)}
+                            className="cursor-pointer group relative block"
+                            title="વિદ્યાર્થીનો ૩D ફોટો અને પ્રોફાઇલ જુઓ (View Photo)"
+                          >
+                            <StudentAvatar
+                              photoUrl={student.photoUrl}
+                              nameGu={student.nameGu}
+                              gender={student.gender}
+                              avatarIcon={student.avatarIcon}
+                              avatarBg={student.avatarBg}
+                              size="sm"
+                              className="group-hover:scale-110 transition-transform shadow-xs ring-2 ring-amber-300/80 rounded-2xl"
+                            />
+                            {student.photoUrl && (
+                              <span
+                                className="absolute -top-1 -right-1 w-2.5 h-2.5 bg-emerald-500 rounded-full border border-white"
+                                title="અપલોડ કરેલો ફોટો સક્રિય છે"
+                              />
+                            )}
+                          </button>
                         </td>
                         <td className="py-3 px-4">
-                          <div className="font-bold text-slate-900 text-sm">{student.nameGu}</div>
-                          <div className="text-[11px] text-slate-400">{student.nameEn}</div>
+                          <button
+                            type="button"
+                            onClick={() => setSelected3DStudent(student)}
+                            className="text-left cursor-pointer group"
+                            title="પ્રોફાઇલ જુઓ"
+                          >
+                            <div className="font-bold text-slate-900 text-sm group-hover:text-amber-700 transition-colors">
+                              {student.nameGu}
+                            </div>
+                            <div className="text-[11px] text-slate-400">
+                              {student.nameEn}
+                            </div>
+                          </button>
                         </td>
                         <td className="py-3 px-3 text-slate-700 font-medium">
                           ધો. {toGujaratiNum(student.standard)}
@@ -1001,6 +1026,15 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
                     >
                       {st.category || 'OBC'}
                     </span>
+                    {st.photoUrl ? (
+                      <span className="text-[10px] font-bold text-emerald-800 bg-emerald-50 border border-emerald-200 px-1.5 py-0.5 rounded flex items-center gap-0.5">
+                        <span>📸 ફોટો સેટ</span>
+                      </span>
+                    ) : (
+                      <span className="text-[10px] font-medium text-slate-500 bg-slate-100 px-1.5 py-0.5 rounded">
+                        અવતાર
+                      </span>
+                    )}
                   </div>
                   <h4 className="text-sm font-bold text-slate-900 truncate mt-1">{st.nameGu}</h4>
                   <p className="text-xs text-slate-400 truncate">{st.nameEn}</p>
@@ -1633,7 +1667,8 @@ export const TeacherDashboard: React.FC<TeacherDashboardProps> = ({
         }}
         onSave={handleSaveStudent}
         initialData={editingStudent}
-        defaultStandard={typeof selectedStandard === 'number' ? selectedStandard : 1}
+        defaultStandard={typeof selectedStandard === 'number' ? selectedStandard : 7}
+        nextRollNo={Math.max(0, ...students.map((s) => s.rollNo)) + 1}
       />
     </div>
   );
